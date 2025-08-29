@@ -1,3 +1,5 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
 allprojects {
     repositories {
         google()
@@ -16,3 +18,5 @@ subprojects {
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
+
+// ✅ REMOVE old buildscript block completely (no need for classpath here anymore)
