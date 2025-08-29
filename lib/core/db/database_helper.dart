@@ -1,3 +1,4 @@
+// lib/core/db/database_helper.dart
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../features/players/data/player_model.dart';
@@ -5,7 +6,6 @@ import '../features/players/data/player_model.dart';
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
-
   DatabaseHelper._init();
 
   Future<Database> get database async {
@@ -17,7 +17,6 @@ class DatabaseHelper {
   Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
-
     return await openDatabase(path, version: 1, onCreate: _createDB);
   }
 
@@ -29,27 +28,43 @@ class DatabaseHelper {
         age INTEGER
       )
     ''');
+    print('Created players table');
   }
-  
+
   Future<int> insertPlayer(Player player) async {
     final db = await instance.database;
-    return await db.insert('players', player.toMap());
+    final id = await db.insert(
+      'players',
+      player.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    print('Inserted player: id=$id name=${player.name}');
+    return id;
   }
 
   Future<List<Player>> getPlayers() async {
     final db = await instance.database;
-    final result = await db.query('players');
-    return result.map((json) => Player.fromMap(json)).toList();
+    final rows = await db.query('players', orderBy: 'id ASC');
+    print('getPlayers rows: $rows'); // debug output
+    return rows.map((r) => Player.fromMap(r)).toList();
   }
 
   Future<int> deletePlayer(int id) async {
     final db = await instance.database;
-    return await db.delete('players', where: 'id = ?', whereArgs: [id]);
+    final cnt = await db.delete('players', where: 'id = ?', whereArgs: [id]);
+    print('Deleted player id=$id, rowsAffected=$cnt');
+    return cnt;
   }
 
+  // helpful debug helper to dump raw query result
+  Future<List<Map<String, Object?>>> rawPlayers() async {
+    final db = await instance.database;
+    return await db.rawQuery('SELECT * FROM players');
+  }
 
   Future close() async {
     final db = await instance.database;
-    db.close();
+    await db.close();
+    _database = null;
   }
 }
