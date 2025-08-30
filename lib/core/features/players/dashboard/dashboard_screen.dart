@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../presentation/player_list_page.dart';
+import '../presentation/batting_order.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -33,6 +34,16 @@ class DashboardScreen extends StatelessWidget {
               );
             },
           ),
+          _DashboardCard(
+            title: "Batting Order",
+            icon: Icons.shuffle,
+            onTap: () {
+              Navigator.push(
+                context, 
+                MaterialPageRoute(builder: (_) => const BattingOrderScreen())
+                );
+            },
+          )
         ],
       ),
     );
