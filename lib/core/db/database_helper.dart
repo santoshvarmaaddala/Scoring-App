@@ -28,8 +28,7 @@ class DatabaseHelper {
         age INTEGER
       )
     ''');
-    print('Created players table');
-  }
+    }
 
   Future<int> insertPlayer(Player player) async {
     final db = await instance.database;
@@ -38,21 +37,18 @@ class DatabaseHelper {
       player.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
-    print('Inserted player: id=$id name=${player.name}');
     return id;
   }
 
   Future<List<Player>> getPlayers() async {
     final db = await instance.database;
     final rows = await db.query('players', orderBy: 'id ASC');
-    print('getPlayers rows: $rows'); // debug output
     return rows.map((r) => Player.fromMap(r)).toList();
   }
 
   Future<int> deletePlayer(int id) async {
     final db = await instance.database;
     final cnt = await db.delete('players', where: 'id = ?', whereArgs: [id]);
-    print('Deleted player id=$id, rowsAffected=$cnt');
     return cnt;
   }
 
