@@ -1,11 +1,12 @@
 // lib/core/db/database_helper.dart
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import '../features/players/data/player_model.dart';
+import "../features/players/data/player_model.dart";
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
+
   DatabaseHelper._init();
 
   Future<Database> get database async {
@@ -24,20 +25,19 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE players (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
+        name TEXT NOT NULL UNIQUE,
         age INTEGER
       )
     ''');
-    }
+  }
 
   Future<int> insertPlayer(Player player) async {
     final db = await instance.database;
-    final id = await db.insert(
+    return await db.insert(
       'players',
       player.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
+      conflictAlgorithm: ConflictAlgorithm.fail,
     );
-    return id;
   }
 
   Future<List<Player>> getPlayers() async {
@@ -46,17 +46,27 @@ class DatabaseHelper {
     return rows.map((r) => Player.fromMap(r)).toList();
   }
 
-  Future<int> deletePlayer(int id) async {
+  Future<int> updatePlayer(Player player) async {
     final db = await instance.database;
-    final cnt = await db.delete('players', where: 'id = ?', whereArgs: [id]);
-    return cnt;
+    return await db.update(
+      'players',
+      player.toMap(),
+      where: 'id = ?',
+      whereArgs: [player.id],
+      conflictAlgorithm: ConflictAlgorithm.fail,
+    );
   }
 
-  // helpful debug helper to dump raw query result
+  Future<int> deletePlayer(int id) async {
+    final db = await instance.database;
+    return await db.delete('players', where: 'id = ?', whereArgs: [id]);
+  }
+
   Future<List<Map<String, Object?>>> rawPlayers() async {
     final db = await instance.database;
     return await db.rawQuery('SELECT * FROM players');
   }
+
 
   Future close() async {
     final db = await instance.database;

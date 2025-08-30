@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../db/database_helper.dart';
-import '../../players/data/player_model.dart';
+import '../data/player_model.dart';
 import 'player_edit_dialog.dart';
 import '../../../ui/toast.dart';
+import '../../../ui/operation_dialog.dart';
 
 class PlayerListPage extends StatefulWidget {
   const PlayerListPage({Key? key}) : super(key: key);
@@ -28,9 +29,8 @@ class _PlayerListPageState extends State<PlayerListPage> {
     });
   }
 
- Future<void> _addPlayer() async {
+  Future<void> _addPlayer() async {
     final nameController = TextEditingController();
-
     final result = await showDialog<String>(
       context: context,
       builder: (_) => PlayerEditDialog(
@@ -44,11 +44,11 @@ class _PlayerListPageState extends State<PlayerListPage> {
         await _dbHelper.insertPlayer(Player(name: result));
         showToast("✅ Player added successfully");
         _fetchPlayers();
-      } catch (e) {
-        showToast("⚠️ Error: Player name already exists");
+      } catch (_) {
+        showToast("⚠️ Player name already exists");
       }
     }
-}
+  }
 
   Future<void> _editPlayer(Player player) async {
     final nameController = TextEditingController(text: player.name);
@@ -59,6 +59,18 @@ class _PlayerListPageState extends State<PlayerListPage> {
         controller: nameController,
       ),
     );
+
+    if (result != null && result.isNotEmpty) {
+      try {
+        await _dbHelper.updatePlayer(
+          Player(id: player.id, name: result),
+        );
+        showToast("✅ Player updated");
+        _fetchPlayers();
+      } catch (_) {
+        showToast("⚠️ Player name already exists");
+      }
+    }
   }
 
   Future<void> _deletePlayer(int id) async {
@@ -86,8 +98,17 @@ class _PlayerListPageState extends State<PlayerListPage> {
                         onPressed: () => _editPlayer(player),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _deletePlayer(player.id!),
+                        icon: const Icon(Icons.delete),
+                        onPressed: () {
+                          showConfirmationDialog(
+                            context,
+                            () {
+                              _deletePlayer(player.id!); // Your delete function
+                            },
+                            'delete',
+
+                          );
+                        },
                       ),
                     ],
                   ),

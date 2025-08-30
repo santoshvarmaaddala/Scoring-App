@@ -20,7 +20,7 @@ class DashboardScreen extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => PlayerListPage()),
+                MaterialPageRoute(builder: (_) => const PlayerListPage()),
               );
             },
           ),
@@ -28,7 +28,6 @@ class DashboardScreen extends StatelessWidget {
             title: "Matches",
             icon: Icons.sports,
             onTap: () {
-              // Placeholder for match screen
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text("Matches Coming Soon")),
               );
