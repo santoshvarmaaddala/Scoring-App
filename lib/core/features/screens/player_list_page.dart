@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../db/database_helper.dart';
-import '../../../db/models/player_model.dart';
-import 'player_edit_dialog.dart';
-import '../../../ui/toast.dart';
-import '../../../ui/operation_dialog.dart';
+import '../../db/database_helper.dart';
+import '../../db/models/player_model.dart';
+import './player_edit_dialog.dart';
+import '../../ui/toast.dart';
+import '../../ui/operation_dialog.dart';
 
 class PlayerListPage extends StatefulWidget {
   const PlayerListPage({Key? key}) : super(key: key);

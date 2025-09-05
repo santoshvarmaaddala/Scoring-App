@@ -1,8 +1,8 @@
 // batting_order.dart
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../../../db/database_helper.dart';
-import '../../../db/models/player_model.dart';
+import '../../db/database_helper.dart';
+import '../../db/models/player_model.dart';
 
 class BattingOrderScreen extends StatefulWidget {
   const BattingOrderScreen({Key? key}) : super(key: key);

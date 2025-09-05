@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../presentation/player_list_page.dart';
-import '../presentation/batting_order.dart';
-import '../presentation/coin_toss.dart';
+import '../screens/player_list_page.dart';
+import '../screens/batting_order.dart';
+import '../screens/coin_toss.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({Key? key}) : super(key: key);
