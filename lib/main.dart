@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'core/features/dashboard/dashboard_screen.dart';
+import 'core/home/home_screen.dart';
 
 void main() {
   runApp(
-    MaterialApp(
+    const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const DashboardScreen(),
+      home: HomeScreen(),
     ),
   );
 }

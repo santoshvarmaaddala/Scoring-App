@@ -1,8 +1,9 @@
 // batting_order.dart
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../../db/database_helper.dart';
-import '../../db/models/player_model.dart';
+import '../db/database_helper.dart';
+import '../db/models/player_model.dart';
+import 'match_setup_screen.dart';
 
 class BattingOrderScreen extends StatefulWidget {
   const BattingOrderScreen({Key? key}) : super(key: key);
@@ -176,6 +177,24 @@ class BattingOrderResultScreen extends StatelessWidget {
             title: Text(order[index]),
           );
         },
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 50),
+          ),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>  MatchSetupScreen(order: order),
+              ),
+            );
+          },
+          icon: const Icon(Icons.arrow_forward),
+          label: const Text("Continue to Match Setup"),
+        ),
       ),
     );
   }
