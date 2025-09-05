@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../db/database_helper.dart';
-import '../data/player_model.dart';
+import '../../../db/models/player_model.dart';
 import 'player_edit_dialog.dart';
 import '../../../ui/toast.dart';
 import '../../../ui/operation_dialog.dart';

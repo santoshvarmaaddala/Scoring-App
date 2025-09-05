@@ -1,7 +1,12 @@
 // lib/core/db/database_helper.dart
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import '../features/players/data/player_model.dart';
+
+import './models/match_model.dart';
+import './models/player_model.dart';
+import './models/batting_order_model.dart';
+import './models/bowling_stats_model.dart';
+import './models/delivery_model.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -35,28 +40,28 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE matches (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        type TEXT CHECK(type IN ('limited', 'unlimited')) NOT NULL,
+        type TEXT NOT NULL,
         overs_limit INTEGER,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TEXT NOT NULL
       )
     ''');
 
-    // Batting order & batting stats
+    // Batting Order
     await db.execute('''
       CREATE TABLE batting_order (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         match_id INTEGER NOT NULL,
         player_id INTEGER NOT NULL,
         batting_position INTEGER NOT NULL,
-        is_out BOOLEAN DEFAULT 0,
+        is_out INTEGER DEFAULT 0,
         runs INTEGER DEFAULT 0,
         balls_faced INTEGER DEFAULT 0,
-        FOREIGN KEY (match_id) REFERENCES matches(id) ON DELETE CASCADE,
-        FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
+        FOREIGN KEY (match_id) REFERENCES matches (id) ON DELETE CASCADE,
+        FOREIGN KEY (player_id) REFERENCES players (id) ON DELETE CASCADE
       )
     ''');
 
-    // Bowling stats
+    // Bowling Stats
     await db.execute('''
       CREATE TABLE bowling_stats (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -65,32 +70,32 @@ class DatabaseHelper {
         overs INTEGER DEFAULT 0,
         runs_conceded INTEGER DEFAULT 0,
         wickets INTEGER DEFAULT 0,
-        FOREIGN KEY (match_id) REFERENCES matches(id) ON DELETE CASCADE,
-        FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
+        FOREIGN KEY (match_id) REFERENCES matches (id) ON DELETE CASCADE,
+        FOREIGN KEY (player_id) REFERENCES players (id) ON DELETE CASCADE
       )
     ''');
 
-    // Deliveries (ball-by-ball log)
+    // Deliveries
     await db.execute('''
       CREATE TABLE deliveries (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         match_id INTEGER NOT NULL,
-        over_number INTEGER,
-        ball_number INTEGER,
+        over_number INTEGER NOT NULL,
+        ball_number INTEGER NOT NULL,
         batsman_id INTEGER NOT NULL,
         bowler_id INTEGER NOT NULL,
         runs INTEGER DEFAULT 0,
-        is_wicket BOOLEAN DEFAULT 0,
-        FOREIGN KEY (match_id) REFERENCES matches(id) ON DELETE CASCADE,
-        FOREIGN KEY (batsman_id) REFERENCES players(id) ON DELETE CASCADE,
-        FOREIGN KEY (bowler_id) REFERENCES players(id) ON DELETE CASCADE
+        is_wicket INTEGER DEFAULT 0,
+        FOREIGN KEY (match_id) REFERENCES matches (id) ON DELETE CASCADE,
+        FOREIGN KEY (batsman_id) REFERENCES players (id) ON DELETE CASCADE,
+        FOREIGN KEY (bowler_id) REFERENCES players (id) ON DELETE CASCADE
       )
     ''');
   }
 
-  // -------------------------------
-  // Players CRUD
-  // -------------------------------
+  // ===========================
+  // PLAYER CRUD
+  // ===========================
   Future<int> insertPlayer(Player player) async {
     final db = await instance.database;
     return await db.insert(
@@ -122,68 +127,104 @@ class DatabaseHelper {
     return await db.delete('players', where: 'id = ?', whereArgs: [id]);
   }
 
+  // ===========================
+  // MATCH CRUD
+  // ===========================
+  Future<int> insertMatch(MatchModel match) async {
+    final db = await instance.database;
+    return await db.insert('matches', match.toMap());
+  }
+
+  Future<List<MatchModel>> getMatches() async {
+    final db = await instance.database;
+    final rows = await db.query('matches', orderBy: 'id DESC');
+    return rows.map((r) => MatchModel.fromMap(r)).toList();
+  }
+
+  // ===========================
+  // BATTING ORDER CRUD
+  // ===========================
+  Future<int> insertBattingOrder(BattingOrder order) async {
+    final db = await instance.database;
+    return await db.insert('batting_order', order.toMap());
+  }
+
+  Future<List<BattingOrder>> getBattingOrder(int matchId) async {
+    final db = await instance.database;
+    final rows = await db.query(
+      'batting_order',
+      where: 'match_id = ?',
+      whereArgs: [matchId],
+      orderBy: 'batting_position ASC',
+    );
+    return rows.map((r) => BattingOrder.fromMap(r)).toList();
+  }
+
+  Future<int> updateBattingOrder(BattingOrder order) async {
+    final db = await instance.database;
+    return await db.update(
+      'batting_order',
+      order.toMap(),
+      where: 'id = ?',
+      whereArgs: [order.id],
+    );
+  }
+
+  // ===========================
+  // BOWLING STATS CRUD
+  // ===========================
+  Future<int> insertBowlingStats(BowlingStats stats) async {
+    final db = await instance.database;
+    return await db.insert('bowling_stats', stats.toMap());
+  }
+
+  Future<List<BowlingStats>> getBowlingStats(int matchId) async {
+    final db = await instance.database;
+    final rows = await db.query(
+      'bowling_stats',
+      where: 'match_id = ?',
+      whereArgs: [matchId],
+    );
+    return rows.map((r) => BowlingStats.fromMap(r)).toList();
+  }
+
+  Future<int> updateBowlingStats(BowlingStats stats) async {
+    final db = await instance.database;
+    return await db.update(
+      'bowling_stats',
+      stats.toMap(),
+      where: 'id = ?',
+      whereArgs: [stats.id],
+    );
+  }
+
+  // ===========================
+  // DELIVERIES CRUD
+  // ===========================
+  Future<int> insertDelivery(Delivery delivery) async {
+    final db = await instance.database;
+    return await db.insert('deliveries', delivery.toMap());
+  }
+
+  Future<List<Delivery>> getDeliveries(int matchId) async {
+    final db = await instance.database;
+    final rows = await db.query(
+      'deliveries',
+      where: 'match_id = ?',
+      whereArgs: [matchId],
+      orderBy: 'over_number ASC, ball_number ASC',
+    );
+    return rows.map((r) => Delivery.fromMap(r)).toList();
+  }
+
+  // ===========================
+  // UTILS
+  // ===========================
   Future<List<Map<String, Object?>>> rawPlayers() async {
     final db = await instance.database;
     return await db.rawQuery('SELECT * FROM players');
   }
 
-  // -------------------------------
-  // Matches CRUD (basic)
-  // -------------------------------
-  Future<int> insertMatch(Map<String, dynamic> match) async {
-    final db = await instance.database;
-    return await db.insert('matches', match);
-  }
-
-  Future<List<Map<String, dynamic>>> getMatches() async {
-    final db = await instance.database;
-    return await db.query('matches', orderBy: 'id DESC');
-  }
-
-  // -------------------------------
-  // Batting Order CRUD
-  // -------------------------------
-  Future<int> insertBattingOrder(Map<String, dynamic> order) async {
-    final db = await instance.database;
-    return await db.insert('batting_order', order);
-  }
-
-  Future<List<Map<String, dynamic>>> getBattingOrder(int matchId) async {
-    final db = await instance.database;
-    return await db.query('batting_order',
-        where: 'match_id = ?', whereArgs: [matchId], orderBy: 'batting_position ASC');
-  }
-
-  // -------------------------------
-  // Bowling Stats CRUD
-  // -------------------------------
-  Future<int> insertBowlingStats(Map<String, dynamic> stats) async {
-    final db = await instance.database;
-    return await db.insert('bowling_stats', stats);
-  }
-
-  Future<List<Map<String, dynamic>>> getBowlingStats(int matchId) async {
-    final db = await instance.database;
-    return await db.query('bowling_stats', where: 'match_id = ?', whereArgs: [matchId]);
-  }
-
-  // -------------------------------
-  // Deliveries CRUD
-  // -------------------------------
-  Future<int> insertDelivery(Map<String, dynamic> delivery) async {
-    final db = await instance.database;
-    return await db.insert('deliveries', delivery);
-  }
-
-  Future<List<Map<String, dynamic>>> getDeliveries(int matchId) async {
-    final db = await instance.database;
-    return await db.query('deliveries',
-        where: 'match_id = ?', whereArgs: [matchId], orderBy: 'id ASC');
-  }
-
-  // -------------------------------
-  // Close DB
-  // -------------------------------
   Future close() async {
     final db = await instance.database;
     await db.close();
