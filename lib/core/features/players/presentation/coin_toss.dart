@@ -11,7 +11,8 @@ class TossScreen extends StatefulWidget {
 class _TossScreenState extends State<TossScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _animation;
+  late Animation<double> _flipAnimation;
+  late Animation<double> _scaleAnimation;
   String result = "Tap the coin!";
   bool isFlipping = false;
   bool showHeads = true;
@@ -20,11 +21,20 @@ class _TossScreenState extends State<TossScreen>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(seconds: 1),
+      duration: const Duration(seconds: 3), // longer spin duration
       vsync: this,
     );
 
-    _animation = Tween<double>(begin: 0, end: pi).animate(
+    // Flip rotation
+    _flipAnimation = Tween<double>(begin: 0, end: 4 * pi).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+
+    // Scaling (zoom in/out while flipping)
+    _scaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.3), weight: 50),
+      TweenSequenceItem(tween: Tween(begin: 1.3, end: 1.0), weight: 50),
+    ]).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
   }
@@ -32,17 +42,32 @@ class _TossScreenState extends State<TossScreen>
   void tossCoin() async {
     if (isFlipping) return;
 
-    setState(() => isFlipping = true);
+    setState(() {
+      isFlipping = true;
+      result = "Flipping...";
+    });
+
     await _controller.forward();
-    await Future.delayed(const Duration(milliseconds: 200));
-    await _controller.reverse();
 
     bool heads = Random().nextBool();
+    bool fakeCall = !heads; // opposite shown first
+
+    // Show the fake call
     setState(() {
       showHeads = heads;
+      result = fakeCall ? "Heads" : "Tails";
+    });
+
+    // Pause for suspense
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    // Reveal the actual result
+    setState(() {
       result = heads ? "Heads" : "Tails";
       isFlipping = false;
     });
+
+    _controller.reset();
   }
 
   Widget _buildCoinSide(bool isHeads) {
@@ -51,12 +76,19 @@ class _TossScreenState extends State<TossScreen>
       height: 150,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isHeads ? Colors.amber : Colors.blueAccent,
+        gradient: LinearGradient(
+          colors: isHeads
+              ? [Colors.amber.shade700, Colors.orangeAccent]
+              : [Colors.blueAccent, Colors.lightBlueAccent],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 12,
             spreadRadius: 2,
+            offset: const Offset(4, 6),
           ),
         ],
       ),
@@ -90,22 +122,32 @@ class _TossScreenState extends State<TossScreen>
             GestureDetector(
               onTap: tossCoin,
               child: AnimatedBuilder(
-                animation: _animation,
+                animation: _controller,
                 builder: (context, child) {
-                  double angle = _animation.value;
-                  bool isFront = angle < pi / 2;
+                  double angle = _flipAnimation.value;
+                  bool isFront = (angle % (2 * pi)) < pi;
+
                   return Transform(
-                    transform: Matrix4.rotationY(angle),
                     alignment: Alignment.center,
+                    transform: Matrix4.identity()
+                      ..rotateY(angle)
+                      ..scale(_scaleAnimation.value),
                     child: _buildCoinSide(isFront ? showHeads : !showHeads),
                   );
                 },
               ),
             ),
-            const SizedBox(height: 20),
-            Text(
-              result,
-              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            const SizedBox(height: 30),
+            AnimatedOpacity(
+              opacity: isFlipping ? 0.0 : 1.0,
+              duration: const Duration(milliseconds: 400),
+              child: Text(
+                result,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         ),
