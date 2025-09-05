@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../presentation/player_list_page.dart';
 import '../presentation/batting_order.dart';
+import '../presentation/coin_toss.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -42,6 +43,15 @@ class DashboardScreen extends StatelessWidget {
                 context, 
                 MaterialPageRoute(builder: (_) => const BattingOrderScreen())
                 );
+            },
+          ),
+          _DashboardCard(
+            title: "Toss",
+            icon: Icons.circle_rounded,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TossScreen()));
             },
           )
         ],
